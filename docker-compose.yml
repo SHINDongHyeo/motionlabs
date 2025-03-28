@@ -1,0 +1,43 @@
+services:
+  nestjs:
+    container_name: nestjs
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    image: nestjs
+    ports:
+      - "3000:3000"
+    environment:
+      - TZ=Asia/Seoul
+    restart: on-failure
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./:/usr/src/app
+    depends_on:
+      - mysql
+
+  mysql:
+    container_name: mysql
+    image: mysql:8.0
+    ports:
+      - "3306:3306"
+    environment:
+      TZ: Asia/Seoul
+      # TODO: 실제로는 비밀번호 노출 X
+      MYSQL_ROOT_PASSWORD: motionlabs1234!
+      MYSQL_DATABASE: motionlabs
+      MYSQL_USER: test
+      # TODO: 실제로는 비밀번호 노출 X
+      MYSQL_PASSWORD: motionlabs1234!
+    restart: on-failure
+    stdin_open: true
+    tty: true
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  nestjs_data:
+    driver: local
+  mysql_data:
+    driver: local
