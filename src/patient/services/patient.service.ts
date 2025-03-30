@@ -163,10 +163,17 @@ export class PatientService {
 			const { page, name, phoneNumber, chartNumber } = getPatientsReq;
 			const numberOfPatientsPerPage = 10;
 
-			return await this.patientRepository.find({
+			const result = await this.patientRepository.find({
 				take: page * numberOfPatientsPerPage,
 				skip: (page - 1) * numberOfPatientsPerPage,
 			});
+
+			return {
+				total: result.length,
+				page: page,
+				count: numberOfPatientsPerPage,
+				data: result,
+			};
 		} catch (error) {
 			throw error;
 		}
