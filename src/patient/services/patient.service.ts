@@ -108,10 +108,6 @@ export class PatientService {
 					console.log(error.message);
 				}
 			}
-
-			if (i === 20) {
-				break;
-			}
 		}
 
 		return worksheetMap;
@@ -128,8 +124,6 @@ export class PatientService {
 	}
 
 	async addPatientsByExcelMap(patientExcelMap: Map<string, ExcelData>) {
-		console.log(patientExcelMap);
-
 		const patientsData = Array.from(patientExcelMap.values()).map(
 			(excelData) => ({
 				chartNumber: excelData.chartNumber,
@@ -145,7 +139,7 @@ export class PatientService {
 			'name',
 			'phoneNumber',
 		]);
-		console.log(result['raw']);
+
 		const numberOfRows = Number(result['raw']['affectedRows']);
 		const resultRawInfo = result['raw']['info'];
 		const numberOfDuplicates = Number(
@@ -163,16 +157,33 @@ export class PatientService {
 			const { page, name, phoneNumber, chartNumber } = getPatientsReq;
 			const numberOfPatientsPerPage = 10;
 
-			const result = await this.patientRepository.find({
-				take: page * numberOfPatientsPerPage,
-				skip: (page - 1) * numberOfPatientsPerPage,
-			});
+			// 필터링
+			let whereConditions = {};
+
+			if (name) {
+				whereConditions['name'] = name;
+			}
+			if (phoneNumber) {
+				whereConditions['phoneNumber'] = phoneNumber;
+			}
+			if (chartNumber) {
+				whereConditions['chartNumber'] = chartNumber;
+			}
+
+			// 조회
+			const [patients, total] = await this.patientRepository.findAndCount(
+				{
+					where: whereConditions,
+					take: numberOfPatientsPerPage,
+					skip: (page - 1) * numberOfPatientsPerPage,
+				},
+			);
 
 			return {
-				total: result.length,
+				total: total,
 				page: page,
-				count: numberOfPatientsPerPage,
-				data: result,
+				count: patients.length,
+				data: patients,
 			};
 		} catch (error) {
 			throw error;

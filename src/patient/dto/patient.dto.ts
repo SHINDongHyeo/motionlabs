@@ -10,7 +10,11 @@ export class GetPatientsReq {
 
 	@IsOptional()
 	@IsString()
-	@ApiProperty({ example: '홍길동', description: '환자의 이름' })
+	@ApiProperty({
+		example: '홍길동',
+		description: '환자의 이름',
+		required: false,
+	})
 	name?: string;
 
 	@IsOptional()
@@ -18,11 +22,16 @@ export class GetPatientsReq {
 	@ApiProperty({
 		example: '01012345678',
 		description: '환자의 전화번호(하이픈(-) 제거한 형태)',
+		required: false,
 	})
 	phoneNumber?: string;
 
 	@IsOptional()
 	@IsString()
-	@ApiProperty({ example: '100001', description: '환자의 차트번호' })
+	@ApiProperty({
+		example: '100001',
+		description: '환자의 차트번호',
+		required: false,
+	})
 	chartNumber?: string;
 }
