@@ -40,7 +40,12 @@ export class PatientController {
 					const seconds = String(now.getSeconds()).padStart(2, '0');
 
 					const timeSuffix = `${year}${month}${day}_${hours}${minutes}${seconds}`;
-					callback(null, timeSuffix + '_' + file.originalname);
+					const safeFilename = Buffer.from(
+						file.originalname,
+						'latin1',
+					).toString('utf8');
+
+					callback(null, `${timeSuffix}_${safeFilename}`);
 				},
 			}),
 		}),
