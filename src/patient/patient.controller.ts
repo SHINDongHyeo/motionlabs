@@ -30,9 +30,17 @@ export class PatientController {
 			storage: diskStorage({
 				destination: './uploads',
 				filename: (req, file, callback) => {
-					const uniqueSuffix =
-						Date.now() + '-' + Math.round(Math.random() * 1e9);
-					callback(null, uniqueSuffix + '-' + file.originalname);
+					const now = new Date();
+
+					const year = now.getFullYear().toString().slice(-2);
+					const month = String(now.getMonth() + 1).padStart(2, '0');
+					const day = String(now.getDate()).padStart(2, '0');
+					const hours = String(now.getHours()).padStart(2, '0');
+					const minutes = String(now.getMinutes()).padStart(2, '0');
+					const seconds = String(now.getSeconds()).padStart(2, '0');
+
+					const timeSuffix = `${year}${month}${day}_${hours}${minutes}${seconds}`;
+					callback(null, timeSuffix + '_' + file.originalname);
 				},
 			}),
 		}),

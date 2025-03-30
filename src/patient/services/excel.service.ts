@@ -25,4 +25,48 @@ export class ExcelService {
 			memo,
 		);
 	}
+
+	updateExcelData(
+		oldExcelData: ExcelData,
+		newExcelData: ExcelData,
+	): ExcelData {
+		let chartNumber = oldExcelData.chartNumber;
+		let name = oldExcelData.name;
+		let phoneNumber = oldExcelData.phoneNumber;
+		let identifyNumber = oldExcelData.identifyNumber;
+		let address = oldExcelData.address;
+		let memo = oldExcelData.memo;
+
+		if (newExcelData.chartNumber) {
+			chartNumber = newExcelData.chartNumber;
+		}
+
+		if (newExcelData.name) {
+			name = newExcelData.name;
+		}
+
+		if (newExcelData.phoneNumber) {
+			phoneNumber = newExcelData.phoneNumber;
+		}
+
+		if (newExcelData.identifyNumber) {
+			identifyNumber = newExcelData.identifyNumber;
+		}
+
+		if (newExcelData.address) {
+			address = newExcelData.address;
+		}
+
+		if (newExcelData.memo) {
+			memo = newExcelData.memo;
+		}
+		return new ExcelData(
+			chartNumber,
+			name,
+			phoneNumber,
+			identifyNumber,
+			address,
+			memo,
+		);
+	}
 }

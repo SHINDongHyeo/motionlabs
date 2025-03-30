@@ -13,6 +13,19 @@
 			},
 			"outFiles": ["${workspaceFolder}/dist/**/*.js"],
 			"console": "integratedTerminal"
+		},
+		{
+			"type": "node",
+			"request": "launch",
+			"name": "개발:테스트",
+			"skipFiles": ["<node_internals>/**"],
+			"runtimeExecutable": "npm",
+			"runtimeArgs": ["run", "test"],
+			"env": {
+				"NODE_ENV": "development"
+			},
+			"outFiles": ["${workspaceFolder}/dist/**/*.js"],
+			"console": "integratedTerminal"
 		}
 	]
 }

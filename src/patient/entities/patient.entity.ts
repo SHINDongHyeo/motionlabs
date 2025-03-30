@@ -3,9 +3,11 @@ import {
 	CreateDateColumn,
 	Entity,
 	PrimaryGeneratedColumn,
+	Unique,
 } from 'typeorm';
 
 @Entity()
+@Unique(['chartNumber', 'name', 'phoneNumber'])
 export class Patient {
 	@PrimaryGeneratedColumn({ type: 'int' })
 	id: number;
@@ -20,7 +22,7 @@ export class Patient {
 	phoneNumber: string;
 
 	@Column({ type: 'varchar', length: 8 })
-	omittedIdentifyNumber: string;
+	identifyNumber: string;
 
 	@Column({ type: 'varchar', length: 50 })
 	address: string;
