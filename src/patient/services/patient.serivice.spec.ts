@@ -39,7 +39,7 @@ describe('PatientService', () => {
 		excelService = module.get<ExcelService>(ExcelService);
 	});
 
-	it('Excel 중복 및 병합 처리 - 차트번호 없는 데이터 위로 병합', async () => {
+	it('Excel 중복 및 병합 처리 - 차트번호 없는 데이터 위로 병합 (1)', async () => {
 		// given
 		const worksheet = {
 			'!ref': 'A1:F3',
@@ -115,7 +115,7 @@ describe('PatientService', () => {
 		);
 	});
 
-	it('Excel 중복 및 병합 처리 - 차트번호 없는 데이터 위로 병합', async () => {
+	it('Excel 중복 및 병합 처리 - 차트번호 없는 데이터 위로 병합 (2)', async () => {
 		// given
 		const worksheet = {
 			'!ref': 'A1:F7',
