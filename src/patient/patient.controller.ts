@@ -1,4 +1,5 @@
 import {
+	BadRequestException,
 	Controller,
 	Get,
 	Post,
@@ -7,7 +8,11 @@ import {
 	UseInterceptors,
 } from '@nestjs/common';
 import { PatientService } from './services/patient.service';
-import { GetPatientsReq } from './dto/patient.dto';
+import {
+	GetPatientsReq,
+	GetPatientsRes,
+	UploadPatientExcelRes,
+} from './dto/patient.dto';
 import {
 	ApiBody,
 	ApiConsumes,
@@ -20,7 +25,7 @@ import { diskStorage } from 'multer';
 import * as XLSX from 'xlsx';
 
 @ApiTags('환자')
-@Controller('patient')
+@Controller('patients')
 export class PatientController {
 	constructor(private readonly patientService: PatientService) {}
 
@@ -67,8 +72,26 @@ export class PatientController {
 			},
 		},
 	})
-	@ApiResponse({ status: 201, description: '환자 등록 성공' })
-	async uploadPatientExcel(@UploadedFile() file: Express.Multer.File) {
+	@ApiResponse({
+		status: 201,
+		description: '환자 등록 성공',
+		type: UploadPatientExcelRes,
+	})
+	@ApiResponse({
+		status: 400,
+		description: '요청에 엑셀 파일을 포함시켜야함',
+		example: {
+			statusCode: 400,
+			message: '엑셀 파일을 업로드해주세요.',
+			error: 'Bad Request',
+		},
+	})
+	async uploadPatientExcel(
+		@UploadedFile() file: Express.Multer.File,
+	): Promise<UploadPatientExcelRes> {
+		if (!file) {
+			throw new BadRequestException('엑셀 파일을 업로드해주세요.');
+		}
 		return await this.patientService.uploadPatientExcel(file);
 	}
 
@@ -78,8 +101,26 @@ export class PatientController {
 		description:
 			'데이터베이스에 저장된 환자 목록을 조회합니다. 페이지, 이름, 차트번호, 전화번호를 사용해 필터링 가능',
 	})
-	@ApiResponse({ status: 200, description: '환자 목록 조회 성공' })
-	async getPatients(@Query() getPatientsReq: GetPatientsReq) {
+	@ApiResponse({
+		status: 200,
+		description: '환자 목록 조회 성공',
+		type: GetPatientsRes,
+	})
+	@ApiResponse({
+		status: 400,
+		description: '잘못된 요청 파라미터 형식',
+		example: {
+			statusCode: 400,
+			message: [
+				'page must not be less than 1',
+				'page must be an integer number',
+			],
+			error: 'Bad Request',
+		},
+	})
+	async getPatients(
+		@Query() getPatientsReq: GetPatientsReq,
+	): Promise<GetPatientsRes> {
 		return await this.patientService.getPatients(getPatientsReq);
 	}
 }
