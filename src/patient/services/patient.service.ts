@@ -29,12 +29,12 @@ export class PatientService {
 		const worksheetMap = new Map<string, ExcelData>();
 		const idMapForNoChartNumber = new Map<string, string>();
 		for (let i = startRow; i <= endRow; i++) {
-			const chartNumber = String(worksheet[`A${i}`]?.['v']);
-			const name = String(worksheet[`B${i}`]?.['v']);
-			const phoneNumber = String(worksheet[`C${i}`]?.['v']);
-			const identifyNumber = String(worksheet[`D${i}`]?.['v']);
-			const address = String(worksheet[`E${i}`]?.['v']);
-			const memo = String(worksheet[`F${i}`]?.['v']);
+			const chartNumber = String(worksheet[`A${i}`]?.['v'] ?? '');
+			const name = String(worksheet[`B${i}`]?.['v'] ?? '');
+			const phoneNumber = String(worksheet[`C${i}`]?.['v'] ?? '');
+			const identifyNumber = String(worksheet[`D${i}`]?.['v'] ?? '');
+			const address = String(worksheet[`E${i}`]?.['v'] ?? '');
+			const memo = String(worksheet[`F${i}`]?.['v'] ?? '');
 
 			try {
 				// Excel 데이터 검증
@@ -88,29 +88,29 @@ export class PatientService {
 			} catch (error) {
 				// Excel 데이터 검증 실패 시
 				if (error instanceof InvalidExcelDataException) {
-					console.log(
-						'error난 데이터',
-						chartNumber,
-						name,
-						phoneNumber,
-						identifyNumber,
-						address,
-						memo,
-					);
-					console.log(error.message);
+					// console.log(
+					// 	'error난 데이터',
+					// 	chartNumber,
+					// 	name,
+					// 	phoneNumber,
+					// 	identifyNumber,
+					// 	address,
+					// 	memo,
+					// );
+					// console.log(error.message);
 				}
 				// 예측하지 못한 에러 시
 				else {
-					console.log(
-						'알 수 없는error난 데이터',
-						chartNumber,
-						name,
-						phoneNumber,
-						identifyNumber,
-						address,
-						memo,
-					);
-					console.log(error.message);
+					// console.log(
+					// 	'알 수 없는error난 데이터',
+					// 	chartNumber,
+					// 	name,
+					// 	phoneNumber,
+					// 	identifyNumber,
+					// 	address,
+					// 	memo,
+					// );
+					// console.log(error.message);
 				}
 			}
 		}
@@ -153,7 +153,7 @@ export class PatientService {
 		const numberOfRows = Number(result['raw']['affectedRows']);
 		const resultRawInfo = result['raw']['info'];
 		const numberOfDuplicates = Number(
-			resultRawInfo.match(/Duplicates:\s*(\d+)/)[1],
+			resultRawInfo.match(/Duplicates:\s*(\d+)/)?.[1] ?? 0,
 		);
 		// FIXME: 이거 내용 잘못이해함. skippedRows는 유효성 검사 실패한 엑셀 로우 데이터 개수 의미하는듯. 수정 필요
 		return plainToInstance(UploadPatientExcelRes, {
