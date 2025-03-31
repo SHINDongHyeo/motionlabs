@@ -21,116 +21,18 @@ export class PatientService {
 		private readonly excelService: ExcelService,
 	) {}
 
-	processPatientExcel(worksheet): Map<string, ExcelData> {
-		// Cell 범위
-		const startRow = Number(worksheet['!ref'].split(':')[0].slice(1)) + 1;
-		const endRow = Number(worksheet['!ref'].split(':')[1].slice(1));
-
-		const worksheetMap = new Map<string, ExcelData>();
-		const idMapForNoChartNumber = new Map<string, string>();
-		for (let i = startRow; i <= endRow; i++) {
-			const chartNumber = String(worksheet[`A${i}`]?.['v'] ?? '');
-			const name = String(worksheet[`B${i}`]?.['v'] ?? '');
-			const phoneNumber = String(worksheet[`C${i}`]?.['v'] ?? '');
-			const identifyNumber = String(worksheet[`D${i}`]?.['v'] ?? '');
-			const address = String(worksheet[`E${i}`]?.['v'] ?? '');
-			const memo = String(worksheet[`F${i}`]?.['v'] ?? '');
-
-			try {
-				// Excel 데이터 검증
-				const excelData = this.excelService.createExcelData(
-					chartNumber,
-					name,
-					phoneNumber,
-					identifyNumber,
-					address,
-					memo,
-				);
-
-				const shortId = `${excelData.name}|${excelData.phoneNumber}`;
-				// 차트번호 존재 시
-				if (excelData.chartNumber !== '') {
-					const fullId = `${excelData.chartNumber}|${excelData.name}|${excelData.phoneNumber}`;
-					idMapForNoChartNumber.set(shortId, fullId);
-
-					if (worksheetMap.has(fullId)) {
-						const oldExcelData = worksheetMap.get(fullId);
-						const updatedExcelData =
-							this.excelService.updateExcelData(
-								oldExcelData,
-								excelData,
-							);
-
-						worksheetMap.set(fullId, updatedExcelData);
-					} else {
-						worksheetMap.set(fullId, excelData);
-					}
-				}
-				// 차트번호 존재하지 않을 시
-				else {
-					if (idMapForNoChartNumber.has(shortId)) {
-						const fullId = idMapForNoChartNumber.get(shortId);
-
-						const oldExcelData = worksheetMap.get(fullId);
-						const updatedExcelData =
-							this.excelService.updateExcelData(
-								oldExcelData,
-								excelData,
-							);
-
-						worksheetMap.set(fullId, updatedExcelData);
-					} else {
-						idMapForNoChartNumber.set(shortId, shortId);
-
-						worksheetMap.set(shortId, excelData);
-					}
-				}
-			} catch (error) {
-				// Excel 데이터 검증 실패 시
-				if (error instanceof InvalidExcelDataException) {
-					// console.log(
-					// 	'error난 데이터',
-					// 	chartNumber,
-					// 	name,
-					// 	phoneNumber,
-					// 	identifyNumber,
-					// 	address,
-					// 	memo,
-					// );
-					// console.log(error.message);
-				}
-				// 예측하지 못한 에러 시
-				else {
-					// console.log(
-					// 	'알 수 없는error난 데이터',
-					// 	chartNumber,
-					// 	name,
-					// 	phoneNumber,
-					// 	identifyNumber,
-					// 	address,
-					// 	memo,
-					// );
-					// console.log(error.message);
-				}
-			}
-		}
-
-		return worksheetMap;
-	}
-
 	async uploadPatientExcel(
 		file: Express.Multer.File,
 	): Promise<UploadPatientExcelRes> {
-		const workbook = XLSX.readFile(file.path, { type: 'buffer' });
-		const sheetName = workbook.SheetNames[0];
-		const worksheet = workbook.Sheets[sheetName];
+		const worksheet = this.excelService.getWorksheetFromExcel(file);
+		const patientMap =
+			this.excelService.getPatientMapFromWorksheet(worksheet);
+		const result = await this.addPatientsByPatientsMap(patientMap);
 
-		const patientExcelMap = this.processPatientExcel(worksheet);
-
-		return await this.addPatientsByExcelMap(patientExcelMap);
+		return plainToInstance(UploadPatientExcelRes, result);
 	}
 
-	async addPatientsByExcelMap(
+	async addPatientsByPatientsMap(
 		patientExcelMap: Map<string, ExcelData>,
 	): Promise<UploadPatientExcelRes> {
 		const patientsData = Array.from(patientExcelMap.values()).map(
@@ -144,28 +46,35 @@ export class PatientService {
 			}),
 		);
 
+		// chartNumber, name, phoneNumber 중복되면 update, 중복되지 않으면 insert
 		const result = await this.patientRepository.upsert(patientsData, [
 			'chartNumber',
 			'name',
 			'phoneNumber',
 		]);
 
-		const numberOfRows = Number(result['raw']['affectedRows']);
+		// TODO: 이거 더 명확하게 알아내느 방법 필요할듯?
+		const totalRows = Number(result['raw']['affectedRows']);
 		const resultRawInfo = result['raw']['info'];
-		const numberOfDuplicates = Number(
+		const skippedRows = Number(
 			resultRawInfo.match(/Duplicates:\s*(\d+)/)?.[1] ?? 0,
 		);
+
 		// FIXME: 이거 내용 잘못이해함. skippedRows는 유효성 검사 실패한 엑셀 로우 데이터 개수 의미하는듯. 수정 필요
-		return plainToInstance(UploadPatientExcelRes, {
-			totalRows: numberOfRows,
-			processedRows: numberOfRows - numberOfDuplicates,
-			skippedRows: numberOfDuplicates,
-		});
+		return plainToInstance(
+			UploadPatientExcelRes,
+			{
+				totalRows: totalRows,
+				processedRows: totalRows - skippedRows,
+				skippedRows: skippedRows,
+			},
+			{ excludeExtraneousValues: true },
+		);
 	}
 
 	async getPatients(getPatientsReq: GetPatientsReq): Promise<GetPatientsRes> {
 		const { page, name, phoneNumber, chartNumber } = getPatientsReq;
-		const numberOfPatientsPerPage = 10;
+		const NUMBER_OF_PATIENTS_PER_PAGE = 10;
 
 		// 필터링
 		let whereConditions = {};
@@ -177,15 +86,19 @@ export class PatientService {
 		// 조회
 		const [patients, total] = await this.patientRepository.findAndCount({
 			where: whereConditions,
-			take: numberOfPatientsPerPage,
-			skip: (page - 1) * numberOfPatientsPerPage,
+			take: NUMBER_OF_PATIENTS_PER_PAGE,
+			skip: (page - 1) * NUMBER_OF_PATIENTS_PER_PAGE,
 		});
 
-		return plainToInstance(GetPatientsRes, {
-			total: total,
-			page: page,
-			count: patients.length,
-			data: patients,
-		});
+		return plainToInstance(
+			GetPatientsRes,
+			{
+				total: total,
+				page: page,
+				count: patients.length,
+				data: patients,
+			},
+			{ excludeExtraneousValues: true },
+		);
 	}
 }

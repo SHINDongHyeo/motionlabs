@@ -21,8 +21,7 @@ import {
 	ApiTags,
 } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import * as XLSX from 'xlsx';
+import { excelFileConfig } from 'src/_common/configs/diskStorageConfig';
 
 @ApiTags('환자')
 @Controller('patients')
@@ -30,31 +29,7 @@ export class PatientController {
 	constructor(private readonly patientService: PatientService) {}
 
 	@Post('upload-excel')
-	@UseInterceptors(
-		FileInterceptor('file', {
-			storage: diskStorage({
-				destination: './uploads',
-				filename: (req, file, callback) => {
-					const now = new Date();
-
-					const year = now.getFullYear().toString().slice(-2);
-					const month = String(now.getMonth() + 1).padStart(2, '0');
-					const day = String(now.getDate()).padStart(2, '0');
-					const hours = String(now.getHours()).padStart(2, '0');
-					const minutes = String(now.getMinutes()).padStart(2, '0');
-					const seconds = String(now.getSeconds()).padStart(2, '0');
-
-					const timeSuffix = `${year}${month}${day}_${hours}${minutes}${seconds}`;
-					const safeFilename = Buffer.from(
-						file.originalname,
-						'latin1',
-					).toString('utf8');
-
-					callback(null, `${timeSuffix}_${safeFilename}`);
-				},
-			}),
-		}),
-	)
+	@UseInterceptors(FileInterceptor('file', excelFileConfig('./uploads')))
 	@ApiOperation({
 		summary: 'Excel 파일 업로드를 통한 환자 등록',
 		description:
@@ -79,11 +54,18 @@ export class PatientController {
 	})
 	@ApiResponse({
 		status: 400,
-		description: '요청에 엑셀 파일을 포함시켜야함',
+		description: '업로드 파일에 대한 에러',
 		example: {
-			statusCode: 400,
-			message: '엑셀 파일을 업로드해주세요.',
-			error: 'Bad Request',
+			'파일을 업로드해야함': {
+				statusCode: 400,
+				message: '업로드 파일이 비어있습니다.',
+				error: 'Bad Request',
+			},
+			'허용되지 않은 파일 확장자': {
+				statusCode: 400,
+				message: '파일 형식이 올바르지 않습니다. (.xlsx 만 허용됨)',
+				error: 'Bad Request',
+			},
 		},
 	})
 	async uploadPatientExcel(
