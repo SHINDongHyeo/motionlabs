@@ -2,11 +2,16 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Patient } from '../entities/patient.entity';
 import { OffsetWithoutLimitNotSupportedError, Repository } from 'typeorm';
-import { GetPatientsReq } from '../dto/patient.dto';
+import {
+	GetPatientsReq,
+	GetPatientsRes,
+	UploadPatientExcelRes,
+} from '../dto/patient.dto';
 import * as XLSX from 'xlsx';
 import { ExcelService } from './excel.service';
 import { InvalidExcelDataException } from 'src/_common/exceptions/invalid-excel-data.exception';
 import { ExcelData } from '../excel/excel-data.class';
+import { plainToInstance } from 'class-transformer';
 
 @Injectable()
 export class PatientService {
@@ -113,7 +118,9 @@ export class PatientService {
 		return worksheetMap;
 	}
 
-	async uploadPatientExcel(file: Express.Multer.File) {
+	async uploadPatientExcel(
+		file: Express.Multer.File,
+	): Promise<UploadPatientExcelRes> {
 		const workbook = XLSX.readFile(file.path, { type: 'buffer' });
 		const sheetName = workbook.SheetNames[0];
 		const worksheet = workbook.Sheets[sheetName];
@@ -123,7 +130,9 @@ export class PatientService {
 		return await this.addPatientsByExcelMap(patientExcelMap);
 	}
 
-	async addPatientsByExcelMap(patientExcelMap: Map<string, ExcelData>) {
+	async addPatientsByExcelMap(
+		patientExcelMap: Map<string, ExcelData>,
+	): Promise<UploadPatientExcelRes> {
 		const patientsData = Array.from(patientExcelMap.values()).map(
 			(excelData) => ({
 				chartNumber: excelData.chartNumber,
@@ -134,6 +143,7 @@ export class PatientService {
 				memo: excelData.memo,
 			}),
 		);
+
 		const result = await this.patientRepository.upsert(patientsData, [
 			'chartNumber',
 			'name',
@@ -145,48 +155,37 @@ export class PatientService {
 		const numberOfDuplicates = Number(
 			resultRawInfo.match(/Duplicates:\s*(\d+)/)[1],
 		);
-		return {
+		// FIXME: 이거 내용 잘못이해함. skippedRows는 유효성 검사 실패한 엑셀 로우 데이터 개수 의미하는듯. 수정 필요
+		return plainToInstance(UploadPatientExcelRes, {
 			totalRows: numberOfRows,
 			processedRows: numberOfRows - numberOfDuplicates,
 			skippedRows: numberOfDuplicates,
-		};
+		});
 	}
 
-	async getPatients(getPatientsReq: GetPatientsReq) {
-		try {
-			const { page, name, phoneNumber, chartNumber } = getPatientsReq;
-			const numberOfPatientsPerPage = 10;
+	async getPatients(getPatientsReq: GetPatientsReq): Promise<GetPatientsRes> {
+		const { page, name, phoneNumber, chartNumber } = getPatientsReq;
+		const numberOfPatientsPerPage = 10;
 
-			// 필터링
-			let whereConditions = {};
+		// 필터링
+		let whereConditions = {};
 
-			if (name) {
-				whereConditions['name'] = name;
-			}
-			if (phoneNumber) {
-				whereConditions['phoneNumber'] = phoneNumber;
-			}
-			if (chartNumber) {
-				whereConditions['chartNumber'] = chartNumber;
-			}
+		if (name) whereConditions['name'] = name;
+		if (phoneNumber) whereConditions['phoneNumber'] = phoneNumber;
+		if (chartNumber) whereConditions['chartNumber'] = chartNumber;
 
-			// 조회
-			const [patients, total] = await this.patientRepository.findAndCount(
-				{
-					where: whereConditions,
-					take: numberOfPatientsPerPage,
-					skip: (page - 1) * numberOfPatientsPerPage,
-				},
-			);
+		// 조회
+		const [patients, total] = await this.patientRepository.findAndCount({
+			where: whereConditions,
+			take: numberOfPatientsPerPage,
+			skip: (page - 1) * numberOfPatientsPerPage,
+		});
 
-			return {
-				total: total,
-				page: page,
-				count: patients.length,
-				data: patients,
-			};
-		} catch (error) {
-			throw error;
-		}
+		return plainToInstance(GetPatientsRes, {
+			total: total,
+			page: page,
+			count: patients.length,
+			data: patients,
+		});
 	}
 }
