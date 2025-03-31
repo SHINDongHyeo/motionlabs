@@ -256,7 +256,6 @@ describe('PatientService', () => {
 		// when
 		const result = patientService.processPatientExcel(worksheet);
 
-		console.log(result);
 		// then
 		expect(result).toEqual(
 			new Map([

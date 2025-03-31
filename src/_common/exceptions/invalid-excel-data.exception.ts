@@ -8,3 +8,39 @@ export class InvalidExcelDataException extends HttpException {
 		);
 	}
 }
+
+export class InvalidIdentifyNumberException extends InvalidExcelDataException {
+	constructor(message: string) {
+		super(message);
+	}
+}
+
+export class InvalidNameException extends InvalidExcelDataException {
+	constructor(message: string) {
+		super(message);
+	}
+}
+
+export class InvalidPhoneNumberException extends InvalidExcelDataException {
+	constructor(message: string) {
+		super(message);
+	}
+}
+
+export class InvalidChartNumberException extends InvalidExcelDataException {
+	constructor(message: string) {
+		super(message);
+	}
+}
+
+export class InvalidAddressException extends InvalidExcelDataException {
+	constructor(message: string) {
+		super(message);
+	}
+}
+
+export class InvalidMemoException extends InvalidExcelDataException {
+	constructor(message: string) {
+		super(message);
+	}
+}

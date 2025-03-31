@@ -23,7 +23,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 				entities: [__dirname + '/**/*.entity{.ts,.js}'],
 				// synchronize: configService.get<boolean>('DB_SYNCHRONIZE'),
 				synchronize: true,
-				logging: true,
+				logging: false,
 			}),
 		}),
 		PatientModule,

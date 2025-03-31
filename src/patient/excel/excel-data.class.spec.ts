@@ -1,6 +1,11 @@
 import {
+	InvalidAddressException,
+	InvalidChartNumberException,
 	InvalidExcelDataException,
 	InvalidIdentifyNumberException,
+	InvalidMemoException,
+	InvalidNameException,
+	InvalidPhoneNumberException,
 } from 'src/_common/exceptions/invalid-excel-data.exception';
 import { ExcelData } from './excel-data.class';
 
@@ -55,7 +60,7 @@ describe('ExcelData', () => {
 						address,
 						memo,
 					),
-			).toThrow(InvalidExcelDataException);
+			).toThrow(InvalidNameException);
 		});
 
 		it('빈 문자열 - 실패', () => {
@@ -73,7 +78,7 @@ describe('ExcelData', () => {
 						address,
 						memo,
 					),
-			).toThrow(InvalidExcelDataException);
+			).toThrow(InvalidNameException);
 		});
 	});
 
@@ -111,7 +116,7 @@ describe('ExcelData', () => {
 						address,
 						memo,
 					),
-			).toThrow(InvalidExcelDataException);
+			).toThrow(InvalidPhoneNumberException);
 		});
 
 		it('13자: Hyphen(-)이 포함된 대한민국 휴대폰 번호 - 성공', () => {
@@ -148,7 +153,7 @@ describe('ExcelData', () => {
 						address,
 						memo,
 					),
-			).toThrow(InvalidExcelDataException);
+			).toThrow(InvalidPhoneNumberException);
 		});
 
 		it('14자 이상: 휴대폰 번호 - 실패', () => {
@@ -166,7 +171,7 @@ describe('ExcelData', () => {
 						address,
 						memo,
 					),
-			).toThrow(InvalidExcelDataException);
+			).toThrow(InvalidPhoneNumberException);
 		});
 	});
 
@@ -430,7 +435,7 @@ describe('ExcelData', () => {
 						address,
 						memo,
 					),
-			).toThrow(InvalidExcelDataException);
+			).toThrow(InvalidChartNumberException);
 		});
 	});
 
@@ -468,7 +473,7 @@ describe('ExcelData', () => {
 						address,
 						memo,
 					),
-			).toThrow(InvalidExcelDataException);
+			).toThrow(InvalidAddressException);
 		});
 	});
 
@@ -506,7 +511,7 @@ describe('ExcelData', () => {
 						address,
 						memo,
 					),
-			).toThrow(InvalidExcelDataException);
+			).toThrow(InvalidMemoException);
 		});
 	});
 });
