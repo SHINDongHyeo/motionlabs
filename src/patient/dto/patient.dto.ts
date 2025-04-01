@@ -1,7 +1,37 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Exclude, Expose, Transform } from 'class-transformer';
-import { IsInt, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import {
+	IsDefined,
+	IsInt,
+	IsNumber,
+	IsOptional,
+	IsString,
+	Min,
+} from 'class-validator';
 import { Patient } from '../entities/patient.entity';
+
+export class PatientRes {
+	@Expose()
+	id: number;
+
+	@Expose()
+	chartNumber: string;
+
+	@Expose()
+	name: string;
+
+	@Expose()
+	phoneNumber: string;
+
+	@Expose()
+	identifyNumber: string;
+
+	@Expose()
+	address: string;
+
+	@Expose()
+	memo: string;
+}
 
 export class GetPatientsReq {
 	@Transform(({ value }) => parseInt(value, 10))
@@ -44,18 +74,21 @@ export class GetPatientsReq {
 
 export class GetPatientsRes {
 	@Expose()
+	@IsDefined()
 	@IsInt()
 	@Min(0)
 	@ApiProperty({ example: '150', description: '조회한 전체 데이터 개수' })
 	total: number;
 
 	@Expose()
+	@IsDefined()
 	@IsInt()
 	@Min(0)
 	@ApiProperty({ example: '1', description: '조회한 페이지' })
 	page: number;
 
 	@Expose()
+	@IsDefined()
 	@IsInt()
 	@Min(0)
 	@ApiProperty({
@@ -65,6 +98,7 @@ export class GetPatientsRes {
 	count: number;
 
 	@Expose()
+	@IsDefined()
 	@ApiProperty({
 		example: `[{
       "id": 90973,

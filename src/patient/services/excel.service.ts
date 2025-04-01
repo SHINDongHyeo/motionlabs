@@ -115,13 +115,16 @@ export class ExcelService {
 		}
 	}
 
-	getPatientMapFromWorksheet(
-		worksheet: XLSX.WorkSheet,
-	): Map<string, ExcelData> {
+	processWorksheet(worksheet: XLSX.WorkSheet): {
+		patientMap: Map<string, ExcelData>;
+		numberOfErrorData: number;
+	} {
 		// 환자정보 Map. key는 차트번호, 이름, 전화번호로 이루어져 있음. value는 ExcelData 객체  ex) { "875112|홍길동|01023335988" : ExcelData 객체 }
 		const patientMap = new Map<string, ExcelData>();
 		// 차트번호 Map. key는 이름, 전화번호로 이루어져 있음. value는 차트번호, 이름, 전화번호로 이루어져 있음.  ex) { "홍길동|01023335988" : "875112|홍길동|01023335988" }
 		const idMapForNoChartNumber = new Map<string, string>();
+		// 검증 실패한 데이터 개수
+		let numberOfErrorData: number = 0;
 
 		const { startRow, endRow } = this.getRefFromWorksheet(worksheet);
 		for (let i = startRow; i <= endRow; i++) {
@@ -146,13 +149,12 @@ export class ExcelService {
 				}
 			} catch (error) {
 				if (error instanceof InvalidExcelDataException) {
-					// TODO: 잘못된 형식의 데이터 어떻게 처리할지 논의 필요
-					continue;
+					numberOfErrorData += 1;
 				}
 			}
 		}
 
-		return patientMap;
+		return { patientMap, numberOfErrorData };
 	}
 
 	createExcelData(

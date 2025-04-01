@@ -5,6 +5,7 @@ import { OffsetWithoutLimitNotSupportedError, Repository } from 'typeorm';
 import {
 	GetPatientsReq,
 	GetPatientsRes,
+	PatientRes,
 	UploadPatientExcelRes,
 } from '../dto/patient.dto';
 import * as XLSX from 'xlsx';
@@ -25,15 +26,21 @@ export class PatientService {
 		file: Express.Multer.File,
 	): Promise<UploadPatientExcelRes> {
 		const worksheet = this.excelService.getWorksheetFromExcel(file);
-		const patientMap =
-			this.excelService.getPatientMapFromWorksheet(worksheet);
-		const result = await this.addPatientsByPatientsMap(patientMap);
+		const { patientMap, numberOfErrorData } =
+			this.excelService.processWorksheet(worksheet);
+		const result = await this.addPatientsByPatientsMap(
+			patientMap,
+			numberOfErrorData,
+		);
 
-		return plainToInstance(UploadPatientExcelRes, result);
+		return plainToInstance(UploadPatientExcelRes, result, {
+			excludeExtraneousValues: true,
+		});
 	}
 
 	async addPatientsByPatientsMap(
 		patientExcelMap: Map<string, ExcelData>,
+		numberOfErrorData: number,
 	): Promise<UploadPatientExcelRes> {
 		const patientsData = Array.from(patientExcelMap.values()).map(
 			(excelData) => ({
@@ -54,22 +61,13 @@ export class PatientService {
 		]);
 
 		// TODO: 이거 더 명확하게 알아내느 방법 필요할듯?
-		const totalRows = Number(result['raw']['affectedRows']);
-		const resultRawInfo = result['raw']['info'];
-		const skippedRows = Number(
-			resultRawInfo.match(/Duplicates:\s*(\d+)/)?.[1] ?? 0,
-		);
+		const processedRows = Number(result['raw']['affectedRows']);
 
-		// FIXME: 이거 내용 잘못이해함. skippedRows는 유효성 검사 실패한 엑셀 로우 데이터 개수 의미하는듯. 수정 필요
-		return plainToInstance(
-			UploadPatientExcelRes,
-			{
-				totalRows: totalRows,
-				processedRows: totalRows - skippedRows,
-				skippedRows: skippedRows,
-			},
-			{ excludeExtraneousValues: true },
-		);
+		return {
+			totalRows: processedRows + numberOfErrorData,
+			processedRows: processedRows,
+			skippedRows: numberOfErrorData,
+		};
 	}
 
 	async getPatients(getPatientsReq: GetPatientsReq): Promise<GetPatientsRes> {
@@ -86,6 +84,7 @@ export class PatientService {
 		// 조회
 		const [patients, total] = await this.patientRepository.findAndCount({
 			where: whereConditions,
+			order: { id: 'DESC' },
 			take: NUMBER_OF_PATIENTS_PER_PAGE,
 			skip: (page - 1) * NUMBER_OF_PATIENTS_PER_PAGE,
 		});
@@ -96,7 +95,9 @@ export class PatientService {
 				total: total,
 				page: page,
 				count: patients.length,
-				data: patients,
+				data: plainToInstance(PatientRes, patients, {
+					excludeExtraneousValues: true,
+				}),
 			},
 			{ excludeExtraneousValues: true },
 		);
