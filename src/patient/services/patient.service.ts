@@ -41,6 +41,7 @@ export class PatientService {
 	async addPatientsByPatientsMap(
 		patientExcelMap: Map<string, ExcelData>,
 		numberOfErrorData: number,
+		batchSize: number = 50000,
 	): Promise<UploadPatientExcelRes> {
 		const patientsData = Array.from(patientExcelMap.values()).map(
 			(excelData) => ({
@@ -53,15 +54,23 @@ export class PatientService {
 			}),
 		);
 
-		// chartNumber, name, phoneNumber 중복되면 update, 중복되지 않으면 insert
-		const result = await this.patientRepository.upsert(patientsData, [
-			'chartNumber',
-			'name',
-			'phoneNumber',
-		]);
+		// 배치 단위로 데이터를 나누어서 처리
+		const totalRows = patientsData.length;
+		let processedRows = 0;
 
-		// TODO: 이거 더 명확하게 알아내느 방법 필요할듯?
-		const processedRows = Number(result['raw']['affectedRows']);
+		for (let i = 0; i < totalRows; i += batchSize) {
+			const batch = patientsData.slice(i, i + batchSize);
+
+			// chartNumber, name, phoneNumber 중복되면 update, 중복되지 않으면 insert
+			const result = await this.patientRepository.upsert(batch, [
+				'chartNumber',
+				'name',
+				'phoneNumber',
+			]);
+
+			const affectedRows = Number(result['raw']['affectedRows']);
+			processedRows += affectedRows;
+		}
 
 		return {
 			totalRows: processedRows + numberOfErrorData,
