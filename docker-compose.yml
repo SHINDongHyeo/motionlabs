@@ -12,8 +12,6 @@ services:
         restart: on-failure
         stdin_open: true
         tty: true
-        volumes:
-            - ./:/usr/src/app
         depends_on:
             - mysql
 
