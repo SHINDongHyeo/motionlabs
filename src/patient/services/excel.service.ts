@@ -175,7 +175,7 @@ export class ExcelService {
 		);
 	}
 
-	private updateExcelData(
+	updateExcelData(
 		oldExcelData: ExcelData,
 		newExcelData: ExcelData,
 	): ExcelData {
